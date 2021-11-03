@@ -48,6 +48,8 @@ class App(QMainWindow):
 
         self.themebutton="theme"
         self.themes = ["Vanilla Theme"]
+        self.green = "\U0001F7E2"
+        self.red = "\U0001F534"
 
         os.chdir(os.path.dirname(os.path.realpath(__file__))) #change working directory to script location
 
@@ -75,8 +77,8 @@ class App(QMainWindow):
         self.centralWidget().setLayout(mainlayout)
         self.show()
 
-        self.checkprofile()
         self.dbcheck()
+        self.checkprofile()
         self.loadfiles()
         
         
@@ -111,23 +113,23 @@ class App(QMainWindow):
     def checkprofile(self):
 
         if os.path.isdir(self.pathprofile+r"\chrome") is True:
-            self.labelchromepresent.setText("🟢 Chrome folder is present")
+            self.labelchromepresent.setText(self.green + " Chrome folder is present")
 
             if len(os.listdir(self.pathprofile+r"\chrome")) == 0:
                 self.loadedtheme="Vanilla Theme"
                 self.labelloaded.setText("Loaded theme:\n\n"+self.loadedtheme)
-                self.labelchromestate.setText("🔴 Chrome folder is empty")
+                self.labelchromestate.setText(self.red + " Chrome folder is empty")
             else:    
-                self.labelchromestate.setText("🟢 Chrome folder is not empty")
+                self.labelchromestate.setText(self.green + " Chrome folder is not empty")
 
         else:
-            self.labelchromepresent.setText("🔴 Chrome folder is not present")
-            self.labelchromestate.setText("🔴 Chrome folder is not present")
+            self.labelchromepresent.setText(self.red + " Chrome folder is not present")
+            self.labelchromestate.setText(self.red + " Chrome folder is not present")
 
         if os.path.isfile(self.pathprofile+r"\user.js") is True:
-            self.labeljspresent.setText("🟢 User.js is present")
+            self.labeljspresent.setText(self.green + " User.js is present")
         else:
-            self.labeljspresent.setText("🔴 User.js not present")
+            self.labeljspresent.setText(self.red + " User.js not present")
 
     def createdb(self):
 

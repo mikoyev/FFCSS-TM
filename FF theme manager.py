@@ -1,27 +1,10 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets, QtGui
 import sys, sqlite3, os, shutil
-import csv
-import time
 from random import randint
 
-
-class color:
-   PURPLE = '\033[95m'
-   CYAN = '\033[96m'
-   DARKCYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   STRIKE = '\u0336'
-   CONCEAL='\033[8m'
-   CROSSED='\033[9m'
-   END = '\033[0m'
 
 class App(QMainWindow):
     "main window"
@@ -40,16 +23,18 @@ class App(QMainWindow):
         self.topgroupbox = None
         self.themelist = None
         self.saved = False
+        self.infoopen=False
         self.loadedtheme = "None"
         self.textselected = "None"
+        self.d= "None"
 
         self.paththemes = ""
         self.pathprofile = ""
 
         self.themebutton="theme"
         self.themes = ["Vanilla Theme"]
-        self.green = "\U0001F7E2"
-        self.red = "\U0001F534"
+        self.green = '<font color="green">✔️</font>'
+        self.red = '<font color="red">✖️</font>'
 
         os.chdir(os.path.dirname(os.path.realpath(__file__))) #change working directory to script location
 
@@ -84,14 +69,14 @@ class App(QMainWindow):
         
     def choosethemesfolder(self):
         
-        self.paththemes = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Themes Folder')
+        self.paththemes = os.path.normpath(QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Themes Folder'))
         if self.paththemes != "":
             self.themefolderindicator.setText(self.paththemes)
             self.loadfiles()
 
     def chooseprofilefolder(self):
         
-        self.pathprofile = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Profile Folder')
+        self.pathprofile = os.path.normpath(QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Profile Folder'))
         if self.pathprofile != "":
             self.profilefolderindicator.setText(self.pathprofile)
             self.checkprofile()
@@ -112,10 +97,11 @@ class App(QMainWindow):
     
     def checkprofile(self):
 
-        if os.path.isdir(self.pathprofile+r"\chrome") is True:
+
+        if os.path.isdir(os.path.join(self.pathprofile, "chrome")) is True:
             self.labelchromepresent.setText(self.green + " Chrome folder is present")
 
-            if len(os.listdir(self.pathprofile+r"\chrome")) == 0:
+            if len(os.listdir(os.path.join(self.pathprofile, "chrome"))) == 0:
                 self.loadedtheme="Vanilla Theme"
                 self.labelloaded.setText("Loaded theme:\n\n"+self.loadedtheme)
                 self.labelchromestate.setText(self.red + " Chrome folder is empty")
@@ -126,7 +112,7 @@ class App(QMainWindow):
             self.labelchromepresent.setText(self.red + " Chrome folder is not present")
             self.labelchromestate.setText(self.red + " Chrome folder is not present")
 
-        if os.path.isfile(self.pathprofile+r"\user.js") is True:
+        if os.path.isfile(os.path.join(self.pathprofile, "user.js")) is True:
             self.labeljspresent.setText(self.green + " User.js is present")
         else:
             self.labeljspresent.setText(self.red + " User.js not present")
@@ -164,8 +150,8 @@ class App(QMainWindow):
 
             if a[0][0]=="themepath" and a[1][0]=="profilepath" and a[2][0]=="currenttheme":
 
-                self.paththemes = a[0][1]
-                self.pathprofile = a[1][1]
+                self.paththemes = os.path.normpath(a[0][1])
+                self.pathprofile = os.path.normpath(a[1][1])
                 self.loadedtheme = a[2][1]
                 self.labelloaded.setText("Loaded theme:\n\n"+self.loadedtheme)
 
@@ -208,12 +194,12 @@ class App(QMainWindow):
 
             for i in range(len(profilefilelist)):
                 if profilefilelist[i] == "chrome": #if chrome exists in profile
-                        shutil.rmtree(dst+"\\chrome")
+                        shutil.rmtree(os.path.join(dst, "chrome"))
                 else:
                     pass
 
                 if profilefilelist[i] == "user.js": #if userjs exists in profile
-                    os.remove(dst+"\\user.js")
+                    os.remove(os.path.join(dst, "user.js"))
                 else:
                     pass
 
@@ -221,14 +207,15 @@ class App(QMainWindow):
 
             #check if chrome folder is present in the theme
             
-            src=self.paththemes + "\\" + self.textselected
+            src=os.path.join(self.paththemes, self.textselected)
+
             themefilelist = os.listdir(src)
             
             for i in range(len(themefilelist)):
 
                 if themefilelist[i] == "chrome": #if chrome exists
-                    src=self.paththemes + "\\" + self.textselected + "\\chrome"
-                    dst=self.pathprofile + "\\chrome"
+                    src=os.path.join(self.paththemes, self.textselected, "chrome")
+                    dst=os.path.join(self.pathprofile, "chrome")
 
                     cfolder=True
                     for j in range(len(profilefilelist)):
@@ -244,8 +231,8 @@ class App(QMainWindow):
                     
                 if themefilelist[i] == "user.js": #if usejs exists
 
-                    src=self.paththemes + "\\" + self.textselected + "\\user.js"
-                    dst=self.pathprofile + "\\user.js"
+                    src=os.path.join(self.paththemes, self.textselected, "user.js")
+                    dst=os.path.join(self.pathprofile, "user.js")
 
                     for j in range(len(profilefilelist)):
                         if profilefilelist[j] == "user.js": #if userjs exists in profile
@@ -260,29 +247,26 @@ class App(QMainWindow):
 
             if cfolder==False:
 
-                src=self.paththemes + "\\" + self.textselected
+                src=os.path.join(self.paththemes, self.textselected)
                 dst=self.pathprofile 
 
                 for i in range(len(profilefilelist)):
                         if profilefilelist[i] == "chrome": #if chrome exists in profile
-                            print(dst)
-                            shutil.rmtree(dst+"\\chrome")
+                            shutil.rmtree(os.path.join(dst, "chrome"))
                         else:
                             pass
 
                         if profilefilelist[i] == "user.js": #if userjs exists in profile
-                            os.remove(dst+"\\user.js")
+                            os.remove(os.path.join(dst, "user.js"))
                         else:
                             pass
 
-                shutil.copytree(src, dst+"\\chrome")
+                shutil.copytree(src, os.path.join(dst, "chrome"))
 
             #if yes copy it to path
             #else copy everything to chrome
             #check if user.js is present
             #if yes copy it
-
-            #shutil.copytree(src, dst)
 
 
     def savedata(self):
@@ -293,6 +277,7 @@ class App(QMainWindow):
             msgBox.setText("No theme selected.")
             msgBox.setInformativeText("Please select a theme.")
             msgBox.setWindowTitle("Theme Selection Error")
+            msgBox.adjustSize()
             #msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Abort )
 
             msgBox.exec_()
@@ -335,6 +320,50 @@ class App(QMainWindow):
             self.applybutton.setText("Apply selected profile")
             self.applybutton.setEnabled(True)
             
+    def infoclose(self, event):
+
+        self.infoopen=False
+
+    def infobox(self):
+
+        """Regarding the infobox not showing with .show(): What seems to be happening is that 
+        you define  local variable d and initialize it as a QDialog, then show it. The problem 
+        is that once the buttonPressed handler is finished executing, the reference to d goes 
+        out of scope, and so it is destroyed by the garbage collector."""
+
+        if self.infoopen==False:
+            self.d = QDialog(self, Qt.WindowTitleHint | Qt.WindowCloseButtonHint) #first adds title, seconds adds close button, done to remove the help button
+            self.d.setWindowTitle("Information")
+
+            layout = QGridLayout()
+
+            info1=QLabel("Usual location of Firefox profile (also available on Firefox's \"about:profiles\" page):\n\n" 
+            +r"     ▶   Linux - $HOME/.mozilla/firefox/XXXXXXX.default-XXXXXX"+"\n"
+            +r"     ▶   Windows 10 - C:\Users\<USERNAME>\AppData\Roaming\Mozilla\Firefox\Profiles\XXXXXXX.default-XXXXXX"+"\n"
+            ,self.d)
+
+            info2=QLabel("Enable these on Firefox's \"about:config\" page:\n\n     ▶   toolkit.legacyUserProfileCustomizations.stylesheets\n     ▶   layers.acceleration.force-enabled\n     ▶   gfx.webrender.all\n     ▶   gfx.webrender.enabled\n     ▶   layout.css.backdrop-filter.enabled\n     ▶   svg.context-properties.content.enabled"
+            ,self.d)
+
+            extrainfo=QLabel("<a href=\"https://github.com/FirefoxCSS-Store/FirefoxCSS-Store.github.io/blob/main/README.md#generic-installation\"> More info </a>", self.d)
+            #extrainfo.setTextFormat(Qt.RichText)
+            extrainfo.setOpenExternalLinks(True)
+            extrainfo.setToolTip("https://github.com/FirefoxCSS-Store/FirefoxCSS-Store.github.io/blob/main/README.md#generic-installation")
+
+            layout.addWidget(info1, 0, 0, 1, 0)
+            layout.addWidget(info2, 1, 0)
+            layout.addWidget(extrainfo, 1, 1, alignment=Qt.AlignRight | Qt.AlignBottom) # | combines multiple aligment rules
+
+            self.d.setLayout(layout)
+
+            self.d.setWindowModality(Qt.NonModal)
+            self.d.show()
+            self.infoopen=True
+            self.d.closeEvent = self.infoclose
+        else:
+            qtRectangle = self.frameGeometry()
+            self.d.move(qtRectangle.center())
+            self.d.activateWindow()
 
     def createtop(self):
 
@@ -349,37 +378,37 @@ class App(QMainWindow):
         profilefolderchooser.setStyleSheet("padding-left: 15px; padding-right: 15px; padding-top: 8px; padding-bottom: 8px;");
         profilefolderchooser.clicked.connect(self.chooseprofilefolder)
 
-
         themefolderpath = self.paththemes
         self.themefolderindicator = QLabel(themefolderpath, self) #the self needs to be there or else it will crash
-        self.themefolderindicator.setMinimumWidth(32)
+        #self.themefolderindicator.setMinimumWidth(32)
 
         profilefolderpath = self.pathprofile
         self.profilefolderindicator = QLabel(profilefolderpath, self)
 
-        #self.progress = QProgressBar()
-        #self.progress.setStyleSheet("padding-left: 0px; padding-right: 0px; padding-top: 0px; padding-bottom: 0px;");
-        #self.progress.setContentsMargins(0,10,0,10)
-        #self.progress.setFixedWidth(250)
+        infobutton = QPushButton("❓️")
+        infobutton.setFixedSize(30,30)
+        
+        infobutton.clicked.connect(self.infobox)
 
 
         layout.addWidget(themefolderchooser)
         layout.addWidget(self.themefolderindicator)
-        layout.addSpacing(30)
+        layout.addSpacing(20)
         layout.addWidget(profilefolderchooser)
         layout.addWidget(self.profilefolderindicator)
         layout.addSpacing(40)
         layout.addStretch(1)
-        #layout.addWidget(self.progress)
-        self.topgroupbox.setFixedHeight(60)
+        layout.addWidget(infobutton)
+
+        self.topgroupbox.setFixedHeight(50)
         self.topgroupbox.setLayout(layout)
 
     def select(self):
         
         if self.themelist.currentRow() > 0:
-            self.textselected= self.themes[self.themelist.currentRow()]
+            self.textselected = self.themes[self.themelist.currentRow()]
         else:
-            self.textselected= self.themes[0]
+            self.textselected = self.themes[0]
 
         self.labelselected.setText("Selected theme:\n\n"+self.textselected)
 
@@ -389,7 +418,8 @@ class App(QMainWindow):
         layout = QHBoxLayout()
 
         leftbox=QFrame()
-        leftbox.setFixedWidth(200)
+        #leftbox.setFixedWidth(200)
+        leftbox.adjustSize() #fits size to content!
         leftboxlayout=QVBoxLayout()
 
         statusbox=QGroupBox()
@@ -407,15 +437,24 @@ class App(QMainWindow):
         self.labelselected.setAlignment(Qt.AlignCenter)
         self.applybutton = QPushButton("Apply selected profile")
         self.applybutton.clicked.connect(self.savedata)
-        
+
+        themesinfo=QLabel("<a href=\"https://firefoxcss-store.github.io/\">Theme Collection</a>")
+        #themesinfo.setTextFormat(Qt.RichText)
+        themesinfo.setOpenExternalLinks(True)
+        themesinfo.setToolTip("https://firefoxcss-store.github.io/")
+        themesinfo.setAlignment(Qt.AlignCenter)
 
         self.themelist.currentRowChanged.connect(lambda: self.select())
 
 
-        self.labelchromepresent = QLabel("🟢 Chrome folder present")
-        self.labelchromestate = QLabel("🔴 Chrome folder empty")
-        self.labeljspresent = QLabel("🟢 User.js is present")
+        self.labelchromepresent = QLabel("Initializing...")
+        self.labelchromestate = QLabel("Initializing...")
+        self.labeljspresent = QLabel("Initializing...")
 
+        """self.labelchromepresent.setFont(QFont("Sagoe UI"))
+        self.labelchromestate.setFont(QFont("Symbola"))
+        self.labeljspresent.setFont(QFont("Symbola"))"""
+ 
         statustboxlayout.addSpacing(10)
         statustboxlayout.addWidget(self.labelchromepresent)
         statustboxlayout.addSpacing(5)
@@ -432,7 +471,9 @@ class App(QMainWindow):
         leftboxlayout.addSpacing(40)
         leftboxlayout.addStretch(1)
         leftboxlayout.addWidget(self.applybutton)
-        
+        leftboxlayout.addSpacing(5)
+        leftboxlayout.addWidget(themesinfo)
+    
 
         statusbox.setLayout(statustboxlayout)
         leftbox.setLayout(leftboxlayout)

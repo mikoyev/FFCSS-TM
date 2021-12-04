@@ -1,0 +1,18 @@
+####Changelog:
+
+v1.2 (funtional release 1) - 04/12/21
+
+    - Linux cross-platform support (so far only tested on ubuntu/xubuntu);
+    - Help dialog with link to CSS Theme Store's tutorial;
+    - Link to CSS Theme Store on main window;
+    - Aesthetic UI changes.
+
+------------------------------
+v1.0 (basically alpha) - 21/10/21
+
+    - All functions working properly on Windows 10;
+    - Theme folder view;
+    - Current selected theme;
+    - Profile/theme folder/current theme autosave function when theme is applied.
+
+------------------------------

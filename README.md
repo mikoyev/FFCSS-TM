@@ -7,7 +7,8 @@ To do:
 
 - Add folder windows executable
 - Add single file windows executable
-- Figure out crossplatform with linux
+- ~~Figure out crossplatform with linux~~ **DONE**
+- Add interface with CSS Theme Store directly inside the app
 
 
 Side notes:

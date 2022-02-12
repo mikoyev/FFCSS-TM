@@ -539,8 +539,7 @@ class ThemeBrowser(QWidget):
         navlayout=QHBoxLayout()
         
         
-        self.url="https://github.com/mikoyev/FFCSS-TM"
-        #self.url="https://firefoxcss-store.github.io/"
+        self.url="https://firefoxcss-store.github.io/"
         
         self.web = QWebEngineView()
         self.web.page().profile().downloadRequested.connect(self.downloadRequested)

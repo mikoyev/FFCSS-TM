@@ -1,5 +1,16 @@
 ####Changelog:
 
+v1.3.1 - 12/02/22
+
+    - Aesthetic UI changes.
+
+------------------------------
+v1.3 - 12/02/22
+
+    - Built in access to the CSS Theme Store;
+    - Download manager with automatic theme list update.
+
+------------------------------
 v1.2 (funtional release 1) - 04/12/21
 
     - Linux cross-platform support (so far only tested on ubuntu/xubuntu);

@@ -1,3 +1,4 @@
+from smtplib import SMTPSenderRefused
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt, QUrl
@@ -8,7 +9,6 @@ from PyQt5.QtWebEngineWidgets import *
 class App(QMainWindow):
     "main window"
     paththemes = ""
-    themelist = None
     def __init__(self, parent=None):
         'initializer'
         super(App, self).__init__(parent)
@@ -19,10 +19,11 @@ class App(QMainWindow):
         self.setWindowIcon(QtGui.QIcon('icon.png'))
         self.setCentralWidget(QWidget(self))
 
-        #this is here for readability bc pylint is an ass
+        #this is here for readability bc pylint
         self.maingroupbox = None
         self.topgroupbox = None
-        #self.themelist = None
+        self.themelist = None
+        self.applyflag = False
         self.saved = False
         self.infoopen=False
         self.loadedtheme = "None"
@@ -33,7 +34,7 @@ class App(QMainWindow):
         self.pathprofile = ""
 
         self.themebutton="theme"
-        self.themes = ["Vanilla Theme"]
+        self.themes = []
         self.green = '<font color="green">✔️</font>'
         self.red = '<font color="red">✖️</font>'
 
@@ -59,7 +60,6 @@ class App(QMainWindow):
         mainlayout = QVBoxLayout()
         mainlayout.addWidget(self.topgroupbox)
         mainlayout.addWidget(self.maingroupbox)
-        #self.centralWidget().setLayout(mainlayout)
         self.centralWidget().setLayout(mainlayout)
         self.show()
 
@@ -83,8 +83,8 @@ class App(QMainWindow):
             self.checkprofile()
 
     def loadfiles(self):
-
         if self.paththemes != "":
+            
             self.themes.clear()
 
             for f in os.listdir(self.paththemes): #appends full path
@@ -100,7 +100,7 @@ class App(QMainWindow):
 
             self.themelist.clear()
             self.themelist.addItems(self.themes)
-            
+
         else:
             pass
     
@@ -190,113 +190,124 @@ class App(QMainWindow):
                 os.remove("FFTMdb.db")
                 self.createdb()
 
+    def themeerror(self):
+
+        self.applyflag = False
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Warning)
+        msgBox.setText("No theme selected.")
+        msgBox.setInformativeText("Please select a theme.")
+        msgBox.setWindowTitle("Theme Selection Error")
+        msgBox.adjustSize()
+
+        msgBox.exec_()
+
 
     def changetheme(self):
 
-        cfolder=False
-        dst=self.pathprofile
-        profilefilelist = os.listdir(self.pathprofile)
 
-        if self.textselected == "Vanilla Theme":
-
-            for i in range(len(profilefilelist)):
-                if profilefilelist[i] == "chrome": #if chrome exists in profile
-                        shutil.rmtree(os.path.join(dst, "chrome"))
-                else:
-                    pass
-
-                if profilefilelist[i] == "user.js": #if userjs exists in profile
-                    os.remove(os.path.join(dst, "user.js"))
-                else:
-                    pass
+        if self.textselected == "None":
+            self.themeerror()
 
         else:
+            cfolder=False
+            dst=self.pathprofile
+            profilefilelist = os.listdir(self.pathprofile)
 
-            #check if chrome folder is present in the theme
-            
-            src=os.path.join(self.paththemes, self.textselected)
-
-            themefilelist = os.listdir(src)
-            
-            for i in range(len(themefilelist)):
-
-                if themefilelist[i] == "chrome": #if chrome exists
-                    src=os.path.join(self.paththemes, self.textselected, "chrome")
-                    dst=os.path.join(self.pathprofile, "chrome")
-
-                    cfolder=True
-                    for j in range(len(profilefilelist)):
-                        if profilefilelist[j] == "chrome": #if chrome exists in profile
-                            shutil.rmtree(dst)
-                        else:
-                            pass
-
-                    shutil.copytree(src, dst)
-
-                else: #if chrome not exists
-                    pass
-                    
-                if themefilelist[i] == "user.js": #if usejs exists
-
-                    src=os.path.join(self.paththemes, self.textselected, "user.js")
-                    dst=os.path.join(self.pathprofile, "user.js")
-
-                    for j in range(len(profilefilelist)):
-                        if profilefilelist[j] == "user.js": #if userjs exists in profile
-                            os.remove(dst)
-                        else:
-                            pass
-
-                    shutil.copy2(src, dst)
-
-                else:
-                    pass
-
-            if cfolder==False:
-
-                src=os.path.join(self.paththemes, self.textselected)
-                dst=self.pathprofile 
+            if self.textselected == "Vanilla Theme":
 
                 for i in range(len(profilefilelist)):
-                        if profilefilelist[i] == "chrome": #if chrome exists in profile
+                    if profilefilelist[i] == "chrome": #if chrome exists in profile
                             shutil.rmtree(os.path.join(dst, "chrome"))
-                        else:
-                            pass
+                    else:
+                        pass
 
-                        if profilefilelist[i] == "user.js": #if userjs exists in profile
-                            os.remove(os.path.join(dst, "user.js"))
-                        else:
-                            pass
+                    if profilefilelist[i] == "user.js": #if userjs exists in profile
+                        os.remove(os.path.join(dst, "user.js"))
+                    else:
+                        pass
 
-                shutil.copytree(src, os.path.join(dst, "chrome"))
+            else:
 
-            #if yes copy it to path
-            #else copy everything to chrome
-            #check if user.js is present
-            #if yes copy it
+                #check if chrome folder is present in the theme
+                
+                src=os.path.join(self.paththemes, self.textselected)
+
+                themefilelist = os.listdir(src)
+                
+                for i in range(len(themefilelist)):
+
+                    if themefilelist[i] == "chrome": #if chrome exists
+                        src=os.path.join(self.paththemes, self.textselected, "chrome")
+                        dst=os.path.join(self.pathprofile, "chrome")
+
+                        cfolder=True
+                        for j in range(len(profilefilelist)):
+                            if profilefilelist[j] == "chrome": #if chrome exists in profile
+                                shutil.rmtree(dst)
+                            else:
+                                pass
+
+                        shutil.copytree(src, dst)
+
+                    else: #if chrome not exists
+                        pass
+                        
+                    if themefilelist[i] == "user.js": #if usejs exists
+
+                        src=os.path.join(self.paththemes, self.textselected, "user.js")
+                        dst=os.path.join(self.pathprofile, "user.js")
+
+                        for j in range(len(profilefilelist)):
+                            if profilefilelist[j] == "user.js": #if userjs exists in profile
+                                os.remove(dst)
+                            else:
+                                pass
+
+                        shutil.copy2(src, dst)
+
+                    else:
+                        pass
+
+                if cfolder==False:
+
+                    src=os.path.join(self.paththemes, self.textselected)
+                    dst=self.pathprofile 
+
+                    for i in range(len(profilefilelist)):
+                            if profilefilelist[i] == "chrome": #if chrome exists in profile
+                                shutil.rmtree(os.path.join(dst, "chrome"))
+                            else:
+                                pass
+
+                            if profilefilelist[i] == "user.js": #if userjs exists in profile
+                                os.remove(os.path.join(dst, "user.js"))
+                            else:
+                                pass
+
+                    shutil.copytree(src, os.path.join(dst, "chrome"))
+
+                #if yes copy it to path
+                #else copy everything to chrome
+                #check if user.js is present
+                #if yes copy it
+        
+        self.applyflag = True
+        self.savedata()
 
 
     def savedata(self):
+        
 
-        if self.textselected == "None":
-            msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Warning)
-            msgBox.setText("No theme selected.")
-            msgBox.setInformativeText("Please select a theme.")
-            msgBox.setWindowTitle("Theme Selection Error")
-            msgBox.adjustSize()
-            #msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Abort )
-
-            msgBox.exec_()
+        if self.textselected == "None" and self.applyflag == True:
+            self.applyflag = False
+            pass
 
         else:
 
             self.applybutton.setText("Applying Theme")
             self.applybutton.setEnabled(False)
             
-
-            self.changetheme()
-
             conn=sqlite3.connect('FFTMdb.db')
             c=conn.cursor()
 
@@ -309,19 +320,21 @@ class App(QMainWindow):
                         data = ?
                         WHERE name = 'profilepath'
                     """, (self.pathprofile,))
-                        
-            c.execute("""UPDATE db SET 
-                        data = ?
-                        WHERE name = 'currenttheme'
-                    """, (self.textselected,))
 
-                        
+            if self.textselected != "None" and self.applyflag == True:            
+                c.execute("""UPDATE db SET 
+                            data = ?
+                            WHERE name = 'currenttheme'
+                        """, (self.textselected,))
+
+                self.loadedtheme=self.textselected
+                self.labelloaded.setText("Loaded theme:\n\n"+self.loadedtheme)
+ 
             conn.commit()
             conn.close()
 
-            self.loadedtheme=self.textselected
-            self.labelloaded.setText("Loaded theme:\n\n"+self.loadedtheme)
             self.saved=True
+            self.themefolderindicator.setText(self.paththemes)
             self.checkprofile()
 
             self.applybutton.setText("Apply selected profile")
@@ -331,6 +344,15 @@ class App(QMainWindow):
 
         self.infoopen=False
 
+    def delete(self):
+
+        if self.textselected == "Vanilla Theme" or self.textselected == "None":
+            pass
+        else:
+            shutil.rmtree(os.path.join(self.paththemes, self.textselected))
+            self.themes.remove(self.textselected)
+            self.themelist.takeItem(self.themelist.currentRow())
+            
     def infobox(self):
 
         """Regarding the infobox not showing with .show(): What seems to be happening is that 
@@ -353,7 +375,6 @@ class App(QMainWindow):
             ,self.d)
 
             extrainfo=QLabel("<a href=\"https://github.com/FirefoxCSS-Store/FirefoxCSS-Store.github.io/blob/main/README.md#generic-installation\"> More info </a>", self.d)
-            #extrainfo.setTextFormat(Qt.RichText)
             extrainfo.setOpenExternalLinks(True)
             extrainfo.setToolTip("https://github.com/FirefoxCSS-Store/FirefoxCSS-Store.github.io/blob/main/README.md#generic-installation")
 
@@ -391,15 +412,20 @@ class App(QMainWindow):
         profilefolderchooser.clicked.connect(self.chooseprofilefolder)
 
         themefolderpath = self.paththemes
-        self.themefolderindicator = QLabel(themefolderpath, self) #the self needs to be there or else it will crash
-        #self.themefolderindicator.setMinimumWidth(32)
+        self.themefolderindicator = QLabel(themefolderpath, self)
 
         profilefolderpath = self.pathprofile
         self.profilefolderindicator = QLabel(profilefolderpath, self)
 
+        deletebutton = QPushButton("❌️")
+        deletebutton.setToolTip("Delete selected theme")
+        deletebutton.setFixedSize(30,30)
+
         infobutton = QPushButton("❓️")
+        infobutton.setToolTip("Info and tips")
         infobutton.setFixedSize(30,30)
         
+        deletebutton.clicked.connect(self.delete)
         infobutton.clicked.connect(self.infobox)
 
 
@@ -410,6 +436,7 @@ class App(QMainWindow):
         layout.addWidget(self.profilefolderindicator)
         layout.addSpacing(40)
         layout.addStretch(1)
+        layout.addWidget(deletebutton)
         layout.addWidget(infobutton)
 
         self.topgroupbox.setFixedHeight(50)
@@ -448,12 +475,11 @@ class App(QMainWindow):
         self.labelselected = QLabel("Selected theme:\n\n"+self.textselected)
         self.labelselected.setAlignment(Qt.AlignCenter)
         self.applybutton = QPushButton("Apply selected profile")
-        self.applybutton.clicked.connect(self.savedata)
+        self.applybutton.clicked.connect(self.changetheme)
 
         themesinfo=QLabel('<a href="/">Theme Collection</a>')
         themesinfo.setTextInteractionFlags(Qt.TextSelectableByMouse)
         themesinfo.mousePressEvent = self.showthemebrowser
-        #themesinfo.setTextFormat(Qt.RichText)
         themesinfo.setOpenExternalLinks(True)
         themesinfo.setToolTip("https://firefoxcss-store.github.io/")
         themesinfo.setAlignment(Qt.AlignCenter)
@@ -504,6 +530,7 @@ class ThemeBrowser(QWidget):
             else:
                 self.fpath = os.path.join(os.path.dirname(__file__), "Themes", filename)
                 self.folderpath=os.path.join(os.path.dirname(__file__), "Themes")
+                w.paththemes=os.path.join(os.path.dirname(__file__), "Themes")
 
             if self.fpath:
                 download.setPath(self.fpath)
@@ -512,20 +539,15 @@ class ThemeBrowser(QWidget):
 
     def unzipper(self):
 
-        print(self.fpath)
-        print(self.folderpath)
-
         with zipfile.ZipFile(self.fpath, 'r') as zip_ref:
             zip_ref.extractall(self.folderpath)
         os.remove(self.fpath)
-        w.loadfiles()
 
+        w.loadfiles() 
+        w.savedata()
         w.themelist.setCurrentRow(len(w.themes)-1) #sets the downloaded item as selected
         w.activateWindow() #brings main window up
-        w.themelist.setFocus() #sets focus to make it blue not grey 
-
-
-        #HIGHLIGHT ADDED THEME IN THE LIST
+        w.themelist.setFocus() #sets focus to make it blue not grey
 
     def __init__(self, parent=None):
         super(ThemeBrowser, self).__init__(parent)
@@ -556,7 +578,6 @@ class ThemeBrowser(QWidget):
         layout.setSpacing(0)
         layout.setContentsMargins(0,0,0,0)
 
-
         navlayout.addWidget(back,0)
         navlayout.addWidget(front,0)
         navlayout.addStretch(1)
@@ -564,7 +585,7 @@ class ThemeBrowser(QWidget):
         self.setLayout(layout)
         nav.setLayout(navlayout)
         
-
+        
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)

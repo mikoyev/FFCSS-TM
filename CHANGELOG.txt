@@ -1,5 +1,11 @@
 ####Changelog:
 
+v1.3.2 - 12/02/22
+
+    - Substancial bugfixes;
+    - Added delete button for theme list.
+
+------------------------------
 v1.3.1 - 12/02/22
 
     - Aesthetic UI changes.

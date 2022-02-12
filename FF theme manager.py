@@ -372,7 +372,7 @@ class App(QMainWindow):
             self.d.move(qtRectangle.center())
             self.d.activateWindow()
     
-    def showthemebrowser(self):
+    def showthemebrowser(self, event):
         if self.tb is None:
             self.tb = ThemeBrowser()
         self.tb.show()
@@ -450,13 +450,13 @@ class App(QMainWindow):
         self.applybutton = QPushButton("Apply selected profile")
         self.applybutton.clicked.connect(self.savedata)
 
-        themesinfo=QLabel("<a href=\"https://firefoxcss-store.github.io/\">Theme Collection</a>")
+        themesinfo=QLabel('<a href="/">Theme Collection</a>')
+        themesinfo.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        themesinfo.mousePressEvent = self.showthemebrowser
         #themesinfo.setTextFormat(Qt.RichText)
         themesinfo.setOpenExternalLinks(True)
         themesinfo.setToolTip("https://firefoxcss-store.github.io/")
         themesinfo.setAlignment(Qt.AlignCenter)
-        self.tbutton = QPushButton("themes")
-        self.tbutton.clicked.connect(self.showthemebrowser)
 
 
         self.themelist.currentRowChanged.connect(lambda: self.select())
@@ -484,7 +484,6 @@ class App(QMainWindow):
         leftboxlayout.addWidget(self.applybutton)
         leftboxlayout.addSpacing(5)
         leftboxlayout.addWidget(themesinfo)
-        leftboxlayout.addWidget(self.tbutton)
 
         statusbox.setLayout(statustboxlayout)
         leftbox.setLayout(leftboxlayout)

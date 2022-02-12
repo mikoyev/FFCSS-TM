@@ -1,18 +1,19 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QUrl
 from PyQt5 import QtWidgets, QtGui
-import sys, sqlite3, os, shutil
-from random import randint
-
+import sys, sqlite3, os, shutil, zipfile
+from PyQt5.QtWebEngineWidgets import *
 
 class App(QMainWindow):
     "main window"
-
-    def __init__(self, Parent = None):
+    paththemes = ""
+    themelist = None
+    def __init__(self, parent=None):
         'initializer'
-        super(App, self).__init__()
+        super(App, self).__init__(parent)
 
+        self.tb=None
         self.title = 'Firefox CSS Theme Manager'
         self.resize(1000, 500)
         self.setWindowIcon(QtGui.QIcon('icon.png'))
@@ -21,14 +22,14 @@ class App(QMainWindow):
         #this is here for readability bc pylint is an ass
         self.maingroupbox = None
         self.topgroupbox = None
-        self.themelist = None
+        #self.themelist = None
         self.saved = False
         self.infoopen=False
         self.loadedtheme = "None"
         self.textselected = "None"
         self.d= "None"
 
-        self.paththemes = ""
+        #self.paththemes = ""
         self.pathprofile = ""
 
         self.themebutton="theme"
@@ -85,13 +86,21 @@ class App(QMainWindow):
 
         if self.paththemes != "":
             self.themes.clear()
-            self.themes.append("Vanilla Theme")
-            filelist = os.listdir(self.paththemes)
-            for i in range(len(filelist)):
-                self.themes.append(filelist[i])
-        
+
+            for f in os.listdir(self.paththemes): #appends full path
+                if os.path.isdir(os.path.join(self.paththemes, f)):
+                    self.themes.append(os.path.join(self.paththemes, f))
+
+            self.themes.sort(key=os.path.getmtime) #sort by time (full path necessary)
+
+            for i, t in enumerate(self.themes):
+                self.themes[i]=t.split(os.path.sep)[-1]
+
+            self.themes.insert(0, "Vanilla Theme")
+
             self.themelist.clear()
             self.themelist.addItems(self.themes)
+            
         else:
             pass
     
@@ -157,8 +166,6 @@ class App(QMainWindow):
 
                 self.themefolderindicator.setText(self.paththemes)
                 self.profilefolderindicator.setText(self.pathprofile)
-
-                
 
                 self.saved=True
                 conn.close()
@@ -364,6 +371,11 @@ class App(QMainWindow):
             qtRectangle = self.frameGeometry()
             self.d.move(qtRectangle.center())
             self.d.activateWindow()
+    
+    def showthemebrowser(self):
+        if self.tb is None:
+            self.tb = ThemeBrowser()
+        self.tb.show()
 
     def createtop(self):
 
@@ -443,6 +455,9 @@ class App(QMainWindow):
         themesinfo.setOpenExternalLinks(True)
         themesinfo.setToolTip("https://firefoxcss-store.github.io/")
         themesinfo.setAlignment(Qt.AlignCenter)
+        self.tbutton = QPushButton("themes")
+        self.tbutton.clicked.connect(self.showthemebrowser)
+
 
         self.themelist.currentRowChanged.connect(lambda: self.select())
 
@@ -450,10 +465,6 @@ class App(QMainWindow):
         self.labelchromepresent = QLabel("Initializing...")
         self.labelchromestate = QLabel("Initializing...")
         self.labeljspresent = QLabel("Initializing...")
-
-        """self.labelchromepresent.setFont(QFont("Sagoe UI"))
-        self.labelchromestate.setFont(QFont("Symbola"))
-        self.labeljspresent.setFont(QFont("Symbola"))"""
  
         statustboxlayout.addSpacing(10)
         statustboxlayout.addWidget(self.labelchromepresent)
@@ -473,11 +484,87 @@ class App(QMainWindow):
         leftboxlayout.addWidget(self.applybutton)
         leftboxlayout.addSpacing(5)
         leftboxlayout.addWidget(themesinfo)
-    
+        leftboxlayout.addWidget(self.tbutton)
 
         statusbox.setLayout(statustboxlayout)
         leftbox.setLayout(leftboxlayout)
         self.maingroupbox.setLayout(layout)
+
+class ThemeBrowser(QWidget):
+
+    def downloadRequested(self, download):
+
+            downloadpath = download.path()
+
+            filename=downloadpath.split(os.path.sep)[-1] #use OS separator instead of /
+            self.foldername=filename.split('.')[1]
+            
+
+            if self.folderpath!="":
+                self.fpath = os.path.join(self.folderpath, filename) #if theres theme folder use it
+            else:
+                self.fpath = os.path.join(os.path.dirname(__file__), "Themes", filename)
+                self.folderpath=os.path.join(os.path.dirname(__file__), "Themes")
+
+            if self.fpath:
+                download.setPath(self.fpath)
+                download.accept()
+                download.finished.connect(self.unzipper)
+
+    def unzipper(self):
+
+        print(self.fpath)
+        print(self.folderpath)
+
+        with zipfile.ZipFile(self.fpath, 'r') as zip_ref:
+            zip_ref.extractall(self.folderpath)
+        os.remove(self.fpath)
+        w.loadfiles()
+
+        w.themelist.setCurrentRow(len(w.themes)-1) #sets the downloaded item as selected
+        w.activateWindow() #brings main window up
+        w.themelist.setFocus() #sets focus to make it blue not grey 
+
+
+        #HIGHLIGHT ADDED THEME IN THE LIST
+
+    def __init__(self, parent=None):
+        super(ThemeBrowser, self).__init__(parent)
+        self.setAttribute(Qt.WA_QuitOnClose, False) #closes browses when main window is closed because I can't seem to figure out parent-child relations
+        self.setWindowTitle("Github Theme Collection")
+        self.resize(1300, 600)
+        self.setWindowIcon(QtGui.QIcon('icon.png'))
+        self.folderpath=w.paththemes
+        layout = QVBoxLayout()
+        nav=QFrame()
+        navlayout=QHBoxLayout()
+        
+        
+        self.url="https://github.com/mikoyev/FFCSS-TM"
+        #self.url="https://firefoxcss-store.github.io/"
+        
+        self.web = QWebEngineView()
+        self.web.page().profile().downloadRequested.connect(self.downloadRequested)
+        self.web.load(QUrl(self.url))
+
+        layout.addWidget(nav)
+        layout.addWidget(self.web,1)
+        
+        back=QPushButton("Back")
+        back.clicked.connect(lambda: self.web.page().triggerAction(QWebEnginePage.Back))
+        front=QPushButton("Front")
+        front.clicked.connect(lambda: self.web.page().triggerAction(QWebEnginePage.Forward))
+        
+        layout.setSpacing(0)
+        layout.setContentsMargins(0,0,0,0)
+
+
+        navlayout.addWidget(back,0)
+        navlayout.addWidget(front,0)
+        navlayout.addStretch(1)
+
+        self.setLayout(layout)
+        nav.setLayout(navlayout)
         
 
 if __name__ == "__main__":
